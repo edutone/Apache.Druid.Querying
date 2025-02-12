@@ -1,0 +1,40 @@
+name: Build package
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      Version: ${{ steps.gitversion.outputs.MajorMinorPatch }}
+      CommitsSinceVersionSource: ${{ steps.gitversion.outputs.CommitsSinceVersionSource }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch-depth is needed for GitVersion
+      
+      # Install and calculate the new version with GitVersion  
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3.1.11
+        with:
+          versionSpec: 6.0.5
+      - name: Determine Version
+        uses: gittools/actions/gitversion/execute@v3.1.11
+        id: gitversion # step id used as reference for output values
+        with:
+          updateAssemblyInfo: true
+      - name: Display GitVersion outputs
+        run: |
+          echo "Version: ${{ steps.gitversion.outputs.MajorMinorPatch }}"
+          echo "CommitsSinceVersionSource: ${{ steps.gitversion.outputs.CommitsSinceVersionSource }}"
+      
+      # Build/pack the project
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.3.0
+        with:
+          dotnet-version: 7.0.x
+
+      - name: Build and Pack NuGet package with versioning
+        run: dotnet pack ${{ vars.CS_PROJ_PATH }} -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
