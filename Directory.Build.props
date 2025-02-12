@@ -12,6 +12,6 @@
     <PackageProjectUrl>https://github.com/oskar11120/Apache.Druid.Querying</PackageProjectUrl>
     <RepositoryUrl>https://github.com/oskar11120/Apache.Druid.Querying</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>druid;druidio;dotnet;dotnet6</PackageTags>
+    <PackageTags>druid;druidio;dotnet;dotnet7</PackageTags>
   </PropertyGroup>
 </Project>
