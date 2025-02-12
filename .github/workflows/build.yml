@@ -36,5 +36,7 @@ jobs:
         with:
           dotnet-version: 7.0.x
 
-      - name: Build and Pack NuGet package with versioning
-        run: dotnet pack ${{ vars.CS_PROJ_PATH }} -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
+      - name: Build and Pack main package with versioning
+        run: dotnet pack Apache.Druid.Querying -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
+      - name: Build and Pack DI package with versioning
+        run: dotnet pack Apache.Druid.Querying.Microsoft.Extensions.DependencyInjection -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release

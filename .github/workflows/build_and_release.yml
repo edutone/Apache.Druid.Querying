@@ -38,14 +38,20 @@ jobs:
         with:
           dotnet-version: 7.0.x
 
-      - name: Build and pack package
-        run: dotnet pack ${{ vars.CS_PROJ_PATH }} -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
-
-      - name: Upload package to GitHub
+      - name: Build and pack main package
+        run: dotnet pack Apache.Druid.Querying -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
+      - name: Build and pack DI package
+        run: dotnet pack Apache.Druid.Querying.Microsoft.Extensions.DependencyInjection -p:Version='${{ steps.gitversion.outputs.MajorMinorPatch }}' -c Release
+      - name: Upload main package to GitHub
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: PolarisClient
-          path: bin/Release/*.nupkg
+          name: Schoolday.Polaris.Querying
+          path: Apache.Druid.Querying/bin/Release/*.nupkg
+      - name: Upload DI package to GitHub
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: Schoolday.Polaris.DependencyInjection
+          path: Apache.Druid.Querying.Microsoft.Extensions.DependencyInjection/bin/Release/*.nupkg
 
   release:
     runs-on: ubuntu-latest
@@ -53,17 +59,25 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' # only run job if on the main branch and on manual trigger
     
     steps:
-      # Push NuGet package to GitHub packages
-      - name: Download nuget package artifact
+      # Push main NuGet package to GitHub packages
+      - name: Download main nuget package artifact
         uses: actions/download-artifact@v4.6.0
         with:
-          name: PolarisClient
-          path: package
-      - name: Prep packages
-        run: dotnet nuget add source --username ${{ vars.USERNAME }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ vars.USERNAME }}/index.json"
-      - name: Push package to GitHub packages
+          name: Schoolday.Polaris.Querying
+          path: main_package
+      - name: Download DI nuget package artifact
+        uses: actions/download-artifact@v4.6.0
+        with:
+          name: Schoolday.Polaris.DependencyInjection
+          path: di_package
+      - name: Add NuGet source
+        run: dotnet nuget add source --username edutone --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/edutone/index.json"
+      - name: Push main package to the GitHub Packages
         if: needs.build.outputs.CommitsSinceVersionSource > 0 # Only release if there has been a commit/version change  
-        run: dotnet nuget push package/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
+        run: dotnet nuget push main_package/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
+      - name: Push DI package to the GitHub Packages
+        if: needs.build.outputs.CommitsSinceVersionSource > 0 # Only release if there has been a commit/version change  
+        run: dotnet nuget push di_package/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
       
       # Create release
       - name: Create Release
@@ -72,5 +86,5 @@ jobs:
         with:
           tag: ${{ needs.build.outputs.Version }}
           name: ${{ needs.build.outputs.Version }}
-          artifacts: "package/*"
+          artifacts: "main_package/*,di_package/*"
           token: ${{ secrets.GITHUB_TOKEN }}
